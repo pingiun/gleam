@@ -223,3 +223,35 @@ impl<'a> JavaScript<'a> {
         res
     }
 }
+
+#[derive(Debug)]
+pub struct Wasm<'a> {
+    main_module: &'a str,
+    output_directory: &'a Path,
+}
+
+impl<'a> Wasm<'a> {
+    pub fn new(main_module: &'a str, output_directory: &'a Path) -> Self {
+        Self {
+            main_module,
+            output_directory,
+        }
+    }
+
+    pub fn render(&self, writer: &impl FileSystemWriter, modules: &[Module]) -> Result<()> {
+        // for module in modules {
+        //     let js_name = module.name.clone();
+        //     if self.config.typescript_declarations {
+        //         self.ts_declaration(writer, module, &js_name)?;
+        //     }
+        //     self.js_module(writer, module, &js_name)?
+        // }
+        // self.write_prelude(writer)?;
+        let name = format!("{}.wasm", self.main_module);
+        let path = self.output_directory.join(&name);
+        let mut file = writer.writer(&path)?;
+        let wasmfile = include_bytes!("/Users/jelle/dev/tmp/chat/target/wasm32-wasi/debug/telnet-chat.wasm");
+        file.write(wasmfile).unwrap();
+        Ok(())
+    }
+}

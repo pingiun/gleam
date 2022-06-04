@@ -1,7 +1,7 @@
 use crate::{
     ast::{SrcSpan, TypedModule, UntypedModule},
     build::{dep_tree, Mode, Module, Origin, Package, Target},
-    codegen::{Erlang, ErlangApp, JavaScript},
+    codegen::{Erlang, ErlangApp, JavaScript, Wasm},
     config::PackageConfig,
     error,
     io::{
@@ -116,7 +116,7 @@ where
         )?;
 
         tracing::info!("Performing code generation");
-        self.perform_codegen(&modules)?;
+        self.perform_codegen(&self.config.name, &modules)?;
 
         self.encode_and_write_metadata(&modules)?;
 
@@ -290,7 +290,7 @@ where
         Ok(())
     }
 
-    fn perform_codegen(&mut self, modules: &[Module]) -> Result<()> {
+    fn perform_codegen(&mut self, main_module: &str, modules: &[Module]) -> Result<()> {
         if !self.perform_codegen {
             tracing::info!("skipping_codegen");
             return Ok(());
@@ -301,6 +301,7 @@ where
             TargetCodegenConfiguration::Erlang { app_file } => {
                 self.perform_erlang_codegen(modules, app_file.as_ref())
             }
+            TargetCodegenConfiguration::Wasm => self.perform_wasm_codegen(main_module, modules),
         }
     }
 
@@ -349,6 +350,18 @@ where
         let artifact_dir = self.out.join("dist");
 
         JavaScript::new(&artifact_dir, &self.config.javascript).render(&self.io, modules)?;
+
+        if self.copy_native_files {
+            self.copy_project_native_files(&artifact_dir, &mut written)?;
+        }
+        Ok(())
+    }
+
+    fn perform_wasm_codegen(&mut self, main_module: &str, modules: &[Module]) -> Result<(), Error> {
+        let mut written = HashSet::new();
+        let artifact_dir = self.out.join("dist");
+
+        Wasm::new(main_module, &artifact_dir).render(&self.io, modules)?;
 
         if self.copy_native_files {
             self.copy_project_native_files(&artifact_dir, &mut written)?;

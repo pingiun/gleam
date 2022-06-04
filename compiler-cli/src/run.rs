@@ -39,6 +39,7 @@ pub fn command(arguments: Vec<String>, target: Option<Target>, which: Which) -> 
     let status = match target.unwrap_or(config.target) {
         Target::Erlang => run_erlang(&module, arguments),
         Target::JavaScript => run_javascript(&config, &module, arguments),
+        Target::Wasm => run_wasm(&config, &module, arguments),
     }?;
 
     std::process::exit(status);
@@ -95,4 +96,12 @@ fn run_javascript(
     }
 
     ProjectIO::new().exec("node", &args, &[], None, false)
+}
+
+fn run_wasm(
+    config: &PackageConfig,
+    module: &str,
+    arguments: Vec<String>,
+) -> Result<i32, Error> {
+    todo!()
 }

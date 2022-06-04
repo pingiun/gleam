@@ -11,3 +11,8 @@ if erlang {
   external fn println(String) -> Nil =
     "erlang" "display"
 }
+
+if wasm {
+  external fn println(String) -> Nil =
+    "" ""
+}
